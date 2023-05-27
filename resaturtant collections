@@ -1,0 +1,92 @@
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+
+namespace RestaurantCollectionAPI.Controllers
+{
+    [Route("[controller]")]
+    [ApiController]
+    public class RestaurantController : ControllerBase
+    {
+        private static List<Restaurant> restaurants = new List<Restaurant>();
+
+        // POST /restaurant
+        [HttpPost]
+        public IActionResult AddRestaurant([FromBody] Restaurant restaurant)
+        {
+            restaurant.Id = restaurants.Count + 1;
+            restaurants.Add(restaurant);
+            return CreatedAtAction(nameof(GetRestaurantById), new { id = restaurant.Id }, restaurant);
+        }
+
+        // PUT /restaurant/{id}
+        [HttpPut("{id}")]
+        public IActionResult UpdateRestaurant(int id, [FromBody] Restaurant restaurant)
+        {
+            Restaurant existingRestaurant = restaurants.Find(r => r.Id == id);
+            if (existingRestaurant == null)
+                return NotFound();
+
+            existingRestaurant.AverageRating = restaurant.AverageRating;
+            existingRestaurant.Votes = restaurant.Votes;
+
+            return Ok(existingRestaurant);
+        }
+
+        // GET /restaurant
+        [HttpGet]
+        public IActionResult GetAllRestaurants()
+        {
+            return Ok(restaurants);
+        }
+
+        // GET /restaurant/query?city={city}
+        [HttpGet("query")]
+        public IActionResult GetRestaurantsByCity(string city)
+        {
+            List<Restaurant> cityRestaurants = restaurants.FindAll(r => r.City.ToLower() == city.ToLower());
+            return Ok(cityRestaurants);
+        }
+
+        // GET /restaurant/query?id={id}
+        [HttpGet("query")]
+        public IActionResult GetRestaurantById(int id)
+        {
+            Restaurant restaurant = restaurants.Find(r => r.Id == id);
+            if (restaurant == null)
+                return NotFound();
+
+            return Ok(restaurant);
+        }
+
+        // DELETE /restaurant/{id}
+        [HttpDelete("{id}")]
+        public IActionResult DeleteRestaurant(int id)
+        {
+            Restaurant restaurant = restaurants.Find(r => r.Id == id);
+            if (restaurant == null)
+                return NotFound();
+
+            restaurants.Remove(restaurant);
+            return NoContent();
+        }
+
+        // GET /restaurant/sort
+        [HttpGet("sort")]
+        public IActionResult SortRestaurantsByRating()
+        {
+            List<Restaurant> sortedRestaurants = new List<Restaurant>(restaurants);
+            sortedRestaurants.Sort((r1, r2) => r2.AverageRating.CompareTo(r1.AverageRating));
+            return Ok(sortedRestaurants);
+        }
+    }
+
+    public class Restaurant
+    {
+        public string City { get; set; }
+        public string Name { get; set; }
+        public int EstimatedCost { get; set; }
+        public string AverageRating { get; set; }
+        public int Votes { get; set; }
+        public int Id { get; set; }
+    }
+}
